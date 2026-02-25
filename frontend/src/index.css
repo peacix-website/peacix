@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================= */
+/* 🌸 Peacix Color System */
+/* ============================= */
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 340 15% 20%;
+
+  /* 🌸 Lotus Blush */
+  --primary: 14 61% 75%; /* #E8A598 */
+  --primary-foreground: 0 0% 100%;
+
+  /* 💜 Lavender Mist */
+  --secondary: 260 37% 74%; /* #B8A9D4 */
+  --secondary-foreground: 0 0% 100%;
+
+  /* 🌿 Sage Dew */
+  --accent: 154 28% 70%; /* #9DC4B0 */
+  --accent-foreground: 0 0% 20%;
+
+  --muted: 14 70% 94%;
+  --muted-foreground: 340 10% 40%;
+
+  --border: 14 40% 85%;
+  --input: 14 40% 85%;
+  --ring: 14 61% 75%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 340 15% 20%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 340 15% 20%;
+
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+
+  --radius: 0.75rem;
+}
+
+/* ============================= */
+/* 🌿 Base Body Styling */
+/* ============================= */
+
+body {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--primary) / 0.15),
+    hsl(var(--secondary) / 0.15),
+    hsl(var(--accent) / 0.15)
+  );
+  color: hsl(var(--foreground));
+  font-family: 'DM Sans', sans-serif;
+}
+
+
