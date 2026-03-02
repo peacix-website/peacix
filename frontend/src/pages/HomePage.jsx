@@ -1,18 +1,18 @@
-import React from 'react';
-import { Helmet } from 'react-helmet';
-import { motion } from 'framer-motion';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import HeroSection from '@/components/HeroSection';
-import ServicesSection from '@/components/ServicesSection';
-import HowItWorks from '@/components/HowItWorks';
-import CounselorsSection from '@/components/CounselorsSection';
-import PricingSection from '@/components/PricingSection';
-import TestimonialsSection from '@/components/TestimonialsSection';
-import ContactSection from '@/components/ContactSection';
-import WhyChoosePeacix from '@/components/WhyChoosePeacix';
-import FAQSection from '@/components/FAQSection';
-import Newsletter from '@/components/Newsletter';
+import React from "react";
+import { Helmet } from "react-helmet";
+import { motion } from "framer-motion";
+
+import Footer from "@/components/Footer";
+import HeroSection from "@/components/HeroSection";
+import ServicesSection from "@/components/ServicesSection";
+import HowItWorks from "@/components/HowItWorks";
+import CounselorsSection from "@/components/CounselorsSection";
+import PricingSection from "@/components/PricingSection";
+import TestimonialsSection from "@/components/TestimonialsSection";
+import ContactSection from "@/components/ContactSection";
+import WhyChoosePeacix from "@/components/WhyChoosePeacix";
+import FAQSection from "@/components/FAQSection";
+import Newsletter from "@/components/Newsletter";
 
 const HomePage = () => {
   return (
@@ -25,14 +25,14 @@ const HomePage = () => {
         />
       </Helmet>
 
-      <div className="min-h-screen bg-white">
-        <Header />
-        
+      <div className="min-h-screen bg-background text-foreground">
+
         <main>
-          {/* Hero Section with CTA */}
+
+          {/* Hero Section */}
           <HeroSection />
-          
-          {/* How It Works (3 steps) */}
+
+          {/* How It Works */}
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -42,7 +42,7 @@ const HomePage = () => {
             <HowItWorks />
           </motion.div>
 
-          {/* Our Services (4 types) */}
+          {/* Services */}
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -62,7 +62,7 @@ const HomePage = () => {
             <WhyChoosePeacix />
           </motion.div>
 
-          {/* Counselor highlights */}
+          {/* Counselors */}
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -82,7 +82,7 @@ const HomePage = () => {
             <TestimonialsSection />
           </motion.div>
 
-          {/* Pricing overview */}
+          {/* Pricing */}
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -92,7 +92,7 @@ const HomePage = () => {
             <PricingSection />
           </motion.div>
 
-          {/* FAQ section */}
+          {/* FAQ */}
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -102,7 +102,7 @@ const HomePage = () => {
             <FAQSection />
           </motion.div>
 
-          {/* Newsletter signup */}
+          {/* Newsletter */}
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -112,7 +112,7 @@ const HomePage = () => {
             <Newsletter />
           </motion.div>
 
-          {/* Contact Section */}
+          {/* Contact */}
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -121,6 +121,7 @@ const HomePage = () => {
           >
             <ContactSection />
           </motion.div>
+
         </main>
 
         <Footer />

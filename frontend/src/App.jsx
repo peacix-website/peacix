@@ -1,25 +1,65 @@
+import React from "react";
+import {
+  Route,
+  Routes,
+  BrowserRouter as Router,
+  Navigate,
+} from "react-router-dom";
 
-import React from 'react';
-import { Route, Routes, BrowserRouter as Router } from 'react-router-dom';
-import ScrollToTop from '@/components/ScrollToTop';
-import HomePage from '@/pages/HomePage';
-import CounselorDetail from '@/pages/CounselorDetail';
-import AllCounselorsPage from '@/pages/AllCounselors';
-import AboutUsPage from '@/pages/AboutUs';
-import ServicesPage from '@/pages/Services';
-import { Toaster } from '@/components/ui/toaster';
+import ScrollToTop from "@/components/ScrollToTop";
+import Header from "@/components/Header";
 
-function App() {
+import HomePage from "@/pages/HomePage";
+import CounselorDetail from "@/pages/CounselorDetail";
+import AllCounselorsPage from "@/pages/AllCounselors";
+import AboutUsPage from "@/pages/AboutUs";
+import ServicesPage from "@/pages/Services";
+import Dashboard from "@/pages/Dashboard";
+import Assessment from "@/pages/Assessment";
+import Auth from "@/pages/Auth";
+import BlogPage from "@/pages/BlogPage";
+import Chat from "@/pages/Chat";
+import BlogDetail from "@/pages/BlogDetail";
+import { Toaster } from "@/components/ui/toaster";
+
+function App({ session }) {
   return (
     <Router>
+      {/* Header always visible */}
+      <Header session={session} />
+
       <ScrollToTop />
+
       <Routes>
+        {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutUsPage />} />
         <Route path="/services" element={<ServicesPage />} />
         <Route path="/counselors" element={<AllCounselorsPage />} />
         <Route path="/counselor/:id" element={<CounselorDetail />} />
+        <Route path="/auth" element={<Auth />} />
+
+        {/* ✅ BLOG ROUTE (Added) */}
+        <Route path="/blog" element={<BlogPage session={session} />} />
+        <Route path="/blog/:id" element={<BlogDetail />} />
+
+        {/* Protected Routes */}
+        <Route
+          path="/dashboard"
+          element={session ? <Dashboard /> : <Navigate to="/" />}
+        />
+
+        <Route
+          path="/assessment"
+          element={session ? <Assessment /> : <Navigate to="/" />}
+        />
+
+        <Route
+          path="/chat"
+          element={session ? <Chat /> : <Navigate to="/" />}
+        />
       </Routes>
+
       <Toaster />
     </Router>
   );

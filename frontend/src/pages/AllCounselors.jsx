@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import CounselorCard from "@/components/CounselorCard";
 import { toast } from "@/components/ui/use-toast";
-import { counselorApi } from "@/lib/api";
-import Header from "@/components/Header";
+import { supabase } from "@/lib/supabase";
 import Footer from "@/components/Footer";
 
 const AllCounselorsPage = () => {
   const [counselors, setCounselors] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [specialties, setSpecialties] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const [filters, setFilters] = useState({
     specialty: "",
     minExperience: "",
@@ -20,16 +20,32 @@ const AllCounselorsPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const counselorsResponse = await counselorApi.getAllCounselors();
-        setCounselors(counselorsResponse.data);
+        // Fetch clinicians
+        const { data: clinicianData, error: clinicianError } =
+          await supabase
+            .from("clinician_directory")
+            .select("*")
+            .order("avg_rating", { ascending: false });
 
-        const specialtiesResponse = await counselorApi.getSpecialties();
-        setSpecialties(specialtiesResponse.data);
+        if (clinicianError) throw clinicianError;
+
+        setCounselors(clinicianData || []);
+
+        // Fetch specialties
+        const { data: specialtyData, error: specialtyError } =
+          await supabase
+            .from("specializations")
+            .select("name")
+            .order("name");
+
+        if (specialtyError) throw specialtyError;
+
+        setSpecialties(specialtyData.map((s) => s.name));
       } catch (error) {
+        console.error(error);
         toast({
           title: "Error",
-          description:
-            "Failed to load counselors and specialties. Please try again later.",
+          description: "Failed to load counselors.",
           variant: "destructive",
         });
       } finally {
@@ -48,30 +64,6 @@ const AllCounselorsPage = () => {
     }));
   };
 
-  const filteredCounselors = counselors.filter((counselor) => {
-    const matchesSpecialty =
-      !filters.specialty ||
-      counselor.specialization
-        .toLowerCase()
-        .includes(filters.specialty.toLowerCase());
-
-    const matchesMinExp =
-      !filters.minExperience ||
-      counselor.experience >= parseInt(filters.minExperience);
-
-    const matchesSearch =
-      !filters.search ||
-      counselor.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-      counselor.specialization
-        .toLowerCase()
-        .includes(filters.search.toLowerCase()) ||
-      counselor.expertise?.some((exp) =>
-        exp.toLowerCase().includes(filters.search.toLowerCase())
-      );
-
-    return matchesSpecialty && matchesMinExp && matchesSearch;
-  });
-
   const handleClearFilters = () => {
     setFilters({
       specialty: "",
@@ -80,65 +72,70 @@ const AllCounselorsPage = () => {
     });
   };
 
+  // 🔥 Real Filtering Logic
+  const filteredCounselors = useMemo(() => {
+    return counselors.filter((c) => {
+      const matchesSpecialty =
+        !filters.specialty ||
+        c.specializations?.includes(filters.specialty);
+
+      const matchesExperience =
+        !filters.minExperience ||
+        c.years_of_experience >= parseInt(filters.minExperience);
+
+      const matchesSearch =
+        !filters.search ||
+        c.full_name
+          ?.toLowerCase()
+          .includes(filters.search.toLowerCase()) ||
+        c.headline
+          ?.toLowerCase()
+          .includes(filters.search.toLowerCase()) ||
+        c.specializations?.some((spec) =>
+          spec.toLowerCase().includes(filters.search.toLowerCase())
+        );
+
+      return matchesSpecialty && matchesExperience && matchesSearch;
+    });
+  }, [counselors, filters]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background text-foreground">
-        <Header />
-        <div className="max-w-7xl mx-auto px-6 py-12">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">
-              Our Counselors
-            </h1>
-            <p className="text-muted-foreground">
-              Loading experienced professionals...
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[1, 2, 3, 4, 5, 6].map((index) => (
-              <div
-                key={index}
-                className="bg-card rounded-xl shadow-md border p-6 animate-pulse"
-              >
-                <div className="h-40 bg-muted rounded mb-4"></div>
-                <div className="h-4 bg-muted rounded mb-2"></div>
-                <div className="h-4 bg-muted rounded w-3/4"></div>
-              </div>
-            ))}
-          </div>
+        <div className="max-w-7xl mx-auto px-6 py-12 text-center">
+          <h1 className="text-4xl font-bold mb-4">
+            Loading our experts...
+          </h1>
         </div>
-        <Footer />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header />
 
-      <main className="pb-12">
+      <main className="pb-16">
         <div className="max-w-7xl mx-auto px-6 py-12">
+
           {/* Page Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-12"
           >
-            <h1 className="text-4xl font-bold mb-4">
-              Meet Our Licensed Psychologists
+            <h1 className="text-4xl font-semibold mb-4">
+              Meet Our Licensed Experts
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Experienced professionals dedicated to your mental well-being
+              Verified professionals ready to support your journey.
             </p>
           </motion.div>
 
           {/* Filters */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-card border rounded-xl shadow-sm p-6 mb-12"
-          >
+          <div className="bg-card border border-border rounded-2xl shadow-sm p-6 mb-12">
             <div className="grid md:grid-cols-4 gap-4">
+
+              {/* Search */}
               <div>
                 <label className="block text-sm font-medium mb-1">
                   Search
@@ -148,11 +145,12 @@ const AllCounselorsPage = () => {
                   name="search"
                   value={filters.search}
                   onChange={handleFilterChange}
-                  placeholder="Search by name, specialty..."
+                  placeholder="Search by name, specialization..."
                   className="w-full px-4 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
+              {/* Specialty */}
               <div>
                 <label className="block text-sm font-medium mb-1">
                   Specialty
@@ -172,6 +170,7 @@ const AllCounselorsPage = () => {
                 </select>
               </div>
 
+              {/* Experience */}
               <div>
                 <label className="block text-sm font-medium mb-1">
                   Min. Experience
@@ -199,8 +198,9 @@ const AllCounselorsPage = () => {
                   Clear Filters
                 </Button>
               </div>
+
             </div>
-          </motion.div>
+          </div>
 
           {/* Results Count */}
           <div className="mb-8 text-center text-muted-foreground">
@@ -212,15 +212,15 @@ const AllCounselorsPage = () => {
             <span className="font-semibold text-foreground">
               {counselors.length}
             </span>{" "}
-            counselors
+            experts
           </div>
 
-          {/* Counselor Grid */}
+          {/* Grid */}
           {filteredCounselors.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredCounselors.map((counselor, index) => (
                 <motion.div
-                  key={counselor._id || counselor.id}
+                  key={counselor.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
@@ -232,16 +232,17 @@ const AllCounselorsPage = () => {
           ) : (
             <div className="text-center py-12">
               <h3 className="text-xl font-semibold mb-2">
-                No counselors found
+                No experts found
               </h3>
               <p className="text-muted-foreground mb-4">
                 Try adjusting your filters.
               </p>
               <Button onClick={handleClearFilters}>
-                Clear All Filters
+                Clear Filters
               </Button>
             </div>
           )}
+
         </div>
       </main>
 

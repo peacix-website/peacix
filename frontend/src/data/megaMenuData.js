@@ -62,7 +62,7 @@ export const megaMenuData = {
 
   resources: {
     items: [
-      { title: "Blog", desc: "Mental health articles", href: "/resources/blog" },
+      { title: "Blog", desc: "Mental health articles", href: "/blog" },
       { title: "Guides", desc: "Downloadable resources", href: "/resources/guides" },
       { title: "FAQs", desc: "Common questions answered", href: "/resources/faqs" },
     ],
