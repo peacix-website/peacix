@@ -89,7 +89,7 @@ const Header = ({ session }) => {
 
             {/* Phone */}
             <a
-              href="tel:+911234567890"
+              href="tel:+918510055849"
               className="w-11 h-11 flex items-center justify-center rounded-full border border-border hover:bg-primary/10 transition"
             >
               <Phone className="w-5 h-5 text-primary" />
@@ -97,7 +97,7 @@ const Header = ({ session }) => {
 
             {/* WhatsApp */}
             <a
-              href="https://wa.me/911234567890"
+              href="https://wa.me/918510055849"
               target="_blank"
               rel="noopener noreferrer"
               className="w-11 h-11 flex items-center justify-center rounded-full bg-accent/30 hover:bg-accent/50 transition"

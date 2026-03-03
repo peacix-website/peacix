@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "framer-motion";
 
 const conditionTypes = [
   "Relieve Anxiety",
@@ -11,7 +10,7 @@ const conditionTypes = [
   "Manage Stress",
 ];
 
-const Assessment = () => {
+const Assessment = ({ session }) => {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [selectedCondition, setSelectedCondition] = useState(null);
@@ -24,19 +23,29 @@ const Assessment = () => {
       const updated = existing.includes(value)
         ? existing.filter((v) => v !== value)
         : [...existing, value];
+
       setAnswers({ ...answers, [key]: updated });
     } else {
       setAnswers({ ...answers, [key]: value });
     }
   };
 
-  const handleSubmit = async () => {
-    setLoading(true);
-
-    const { data: patient } = await supabase
+  const saveAssessmentToDB = async (userId) => {
+    let { data: patient } = await supabase
       .from("patients")
       .select("id")
+      .eq("user_id", userId)
       .single();
+
+    if (!patient) {
+      const { data: newPatient } = await supabase
+        .from("patients")
+        .insert({ user_id: userId })
+        .select()
+        .single();
+
+      patient = newPatient;
+    }
 
     await supabase.from("patient_assessments").insert({
       patient_id: patient.id,
@@ -44,15 +53,42 @@ const Assessment = () => {
       answers,
       score: 0,
     });
+  };
 
-    navigate("/dashboard");
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+
+      // 🔹 If user NOT logged in
+      if (!session) {
+        localStorage.setItem(
+          "pendingAssessment",
+          JSON.stringify({
+            type: selectedCondition,
+            answers,
+          })
+        );
+
+        navigate("/auth");
+        return;
+      }
+
+      // 🔹 If logged in
+      await saveAssessmentToDB(session.user.id);
+
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Assessment error:", err);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-6">
       <div className="w-full max-w-3xl bg-card border border-border rounded-2xl p-8 shadow-xl">
 
-        {/* STEP 0 — General Info */}
         {step === 0 && (
           <>
             <h2 className="text-xl font-semibold text-primary mb-6">
@@ -70,27 +106,14 @@ const Assessment = () => {
                 <p className="mb-2 text-muted-foreground">Age Range</p>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    "Under 18","18–24","25–34","35–44","45–54","55–64","65+","Prefer not to say"
+                    "Under 18","18–24","25–34","35–44",
+                    "45–54","55–64","65+","Prefer not to say"
                   ].map((age) => (
                     <OptionCard
                       key={age}
                       label={age}
                       selected={answers.age === age}
                       onClick={() => handleChange("age", age)}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="mb-2 text-muted-foreground">How do you identify?</p>
-                <div className="grid grid-cols-2 gap-3">
-                  {["Woman","Man","Third Gender","Prefer not to say"].map((g) => (
-                    <OptionCard
-                      key={g}
-                      label={g}
-                      selected={answers.gender === g}
-                      onClick={() => handleChange("gender", g)}
                     />
                   ))}
                 </div>
@@ -103,7 +126,6 @@ const Assessment = () => {
           </>
         )}
 
-        {/* STEP 1 — Condition Selection */}
         {step === 1 && (
           <>
             <h2 className="text-xl font-semibold text-primary mb-6">
@@ -135,7 +157,6 @@ const Assessment = () => {
           </>
         )}
 
-        {/* STEP 2 — Dynamic Condition Questions */}
         {step === 2 && selectedCondition && (
           <>
             <h2 className="text-xl font-semibold text-primary mb-6">
@@ -167,12 +188,11 @@ const Assessment = () => {
 const OptionCard = ({ label, selected, onClick }) => (
   <div
     onClick={onClick}
-    className={`cursor-pointer border rounded-lg p-3 text-center transition-all
-      ${
-        selected
-          ? "bg-primary text-primary-foreground border-primary"
-          : "bg-background border-border hover:bg-accent"
-      }`}
+    className={`cursor-pointer border rounded-lg p-3 text-center transition-all ${
+      selected
+        ? "bg-primary text-primary-foreground border-primary"
+        : "bg-background border-border hover:bg-accent"
+    }`}
   >
     {label}
   </div>
@@ -181,61 +201,39 @@ const OptionCard = ({ label, selected, onClick }) => (
 const renderConditionQuestions = (type, answers, handleChange) => {
   if (type === "Relieve Anxiety") {
     return (
-      <div className="space-y-6">
-        <QuestionBlock
-          title="How are you feeling at the moment?"
-          options={[
-            "Calm",
-            "Slightly anxious",
-            "Overwhelmed",
-            "Unsure",
-            "Prefer not to say",
-          ]}
-          answerKey="anxiety_current_feeling"
-          answers={answers}
-          handleChange={handleChange}
-        />
-
-        <QuestionBlock
-          title="How often have you felt nervous recently?"
-          options={[
-            "Not at all",
-            "Several days",
-            "More than half the days",
-            "Nearly every day",
-          ]}
-          answerKey="anxiety_frequency"
-          answers={answers}
-          handleChange={handleChange}
-        />
-      </div>
+      <QuestionBlock
+        title="How often have you felt nervous recently?"
+        options={[
+          "Not at all",
+          "Several days",
+          "More than half the days",
+          "Nearly every day",
+        ]}
+        answerKey="anxiety_frequency"
+        answers={answers}
+        handleChange={handleChange}
+      />
     );
   }
 
   if (type === "Conquer Depression") {
     return (
-      <div className="space-y-6">
-        <QuestionBlock
-          title="How often have you felt low recently?"
-          options={[
-            "Not at all",
-            "Several days",
-            "More than half the days",
-            "Nearly every day",
-          ]}
-          answerKey="depression_frequency"
-          answers={answers}
-          handleChange={handleChange}
-        />
-      </div>
+      <QuestionBlock
+        title="How often have you felt low recently?"
+        options={[
+          "Not at all",
+          "Several days",
+          "More than half the days",
+          "Nearly every day",
+        ]}
+        answerKey="depression_frequency"
+        answers={answers}
+        handleChange={handleChange}
+      />
     );
   }
 
-  return (
-    <p className="text-muted-foreground">
-      More structured questions can be added here similarly.
-    </p>
-  );
+  return null;
 };
 
 const QuestionBlock = ({

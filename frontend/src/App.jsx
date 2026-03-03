@@ -16,6 +16,7 @@ import AboutUsPage from "@/pages/AboutUs";
 import ServicesPage from "@/pages/Services";
 import Dashboard from "@/pages/Dashboard";
 import Assessment from "@/pages/Assessment";
+import AssessmentEntry from "@/pages/AssessmentEntry";
 import Auth from "@/pages/Auth";
 import BlogPage from "@/pages/BlogPage";
 import Chat from "@/pages/Chat";
@@ -25,9 +26,7 @@ import { Toaster } from "@/components/ui/toaster";
 function App({ session }) {
   return (
     <Router>
-      {/* Header always visible */}
       <Header session={session} />
-
       <ScrollToTop />
 
       <Routes>
@@ -39,19 +38,26 @@ function App({ session }) {
         <Route path="/counselor/:id" element={<CounselorDetail />} />
         <Route path="/auth" element={<Auth />} />
 
-        {/* ✅ BLOG ROUTE (Added) */}
+        {/* Blog */}
         <Route path="/blog" element={<BlogPage session={session} />} />
         <Route path="/blog/:id" element={<BlogDetail />} />
+
+        {/* Smart Entry Route */}
+        <Route
+          path="/services/assessment"
+          element={<AssessmentEntry session={session} />}
+        />
+
+        {/* 🔥 Assessment is now PUBLIC */}
+        <Route
+          path="/assessment"
+          element={<Assessment session={session} />}
+        />
 
         {/* Protected Routes */}
         <Route
           path="/dashboard"
           element={session ? <Dashboard /> : <Navigate to="/" />}
-        />
-
-        <Route
-          path="/assessment"
-          element={session ? <Assessment /> : <Navigate to="/" />}
         />
 
         <Route

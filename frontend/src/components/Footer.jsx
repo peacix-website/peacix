@@ -5,7 +5,6 @@ import {
   Lock,
   Award,
   Facebook,
-  Twitter,
   Instagram,
   Linkedin,
   Mail,
@@ -14,6 +13,8 @@ import {
   MapPin,
   FileText,
 } from "lucide-react";
+
+import { FaXTwitter, FaYoutube, FaQuora } from "react-icons/fa6";
 
 const Footer = () => {
   const quickLinks = [
@@ -33,16 +34,18 @@ const Footer = () => {
 
   const contactInfo = [
     { icon: Mail, text: "support@peacix.com" },
-    { icon: Phone, text: "+91 8851158960" },
+    { icon: Phone, text: "+91 8510055849" },
     { icon: MapPin, text: "Ghaziabad, UP, India" },
     { icon: Clock, text: "Mon-Sat: 9AM - 9PM" },
   ];
 
   const socialLinks = [
     { icon: Facebook, href: "#facebook", label: "Facebook" },
-    { icon: Twitter, href: "#twitter", label: "Twitter" },
-    { icon: Instagram, href: "#instagram", label: "Instagram" },
+    { icon: FaXTwitter, href: "https://x.com/Peacix_Official", label: "X" },
+    { icon: Instagram, href: "https://www.instagram.com/peacix_official/", label: "Instagram" },
     { icon: Linkedin, href: "#linkedin", label: "LinkedIn" },
+    { icon: FaYoutube, href: "https://www.youtube.com/@Peacix_Official", label: "YouTube" },
+    { icon: FaQuora, href: "https://www.quora.com/profile/Peacix", label: "Quora" },
   ];
 
   return (
@@ -130,10 +133,12 @@ const Footer = () => {
               <a
                 key={social.label}
                 href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
                 aria-label={social.label}
                 className="p-2 rounded-full bg-secondary/20 hover:bg-primary/20 transition"
               >
-                <social.icon className="w-5 h-5 text-foreground" />
+                <social.icon size={20} className="text-foreground" />
               </a>
             ))}
           </div>
