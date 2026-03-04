@@ -37,7 +37,7 @@ const CounselorsSection = () => {
   }, []);
 
   const handleViewAll = () => {
-    navigate("/counselors");
+    navigate("/experts");
   };
 
   if (loading) {

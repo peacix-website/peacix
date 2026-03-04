@@ -15,54 +15,59 @@ import {
   Brain,
   Users,
   Book,
-  Shield
+  Shield,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/lib/supabase";
 import Footer from "@/components/Footer";
 
-const CounselorDetail = () => {
+const ExpertDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [counselor, setCounselor] = useState(null);
+  const [expert, setExpert] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('about');
 
   useEffect(() => {
-    const fetchCounselor = async () => {
+    const fetchExpert = async () => {
       try {
         setLoading(true);
 
+        // Fetch clinician with profile data
         const { data, error } = await supabase
           .from("clinicians")
           .select(`
             *,
-            profiles (
+            profiles!inner (
+              id,
               full_name,
               avatar_url,
               gender,
               bio,
-              phone,
-              date_of_birth
+              phone
             )
           `)
           .eq("id", id)
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Supabase error:", error);
+          throw error;
+        }
 
         if (!data) {
           toast({
             title: "Not Found",
-            description: "Counselor not found",
+            description: "Expert not found",
             variant: "destructive",
           });
-          navigate("/counselors");
+          navigate("/experts");
           return;
         }
 
-        // Transform data
+        // Transform data for display
         const transformedData = {
           ...data,
           name: data.profiles?.full_name || "Unknown",
@@ -83,15 +88,18 @@ const CounselorDetail = () => {
           certifications: data.certifications || [],
           expertise: data.expertise_tags || [],
           availability: data.availability,
+          city: data.city,
+          country: data.country,
+          headline: data.headline,
         };
 
-        console.log("Fetched counselor:", transformedData);
-        setCounselor(transformedData);
+        console.log("Fetched expert:", transformedData);
+        setExpert(transformedData);
 
       } catch (error) {
-        console.error("Error fetching counselor:", error);
+        console.error("Error fetching expert:", error);
         toast({
-          title: "Failed to load counselor",
+          title: "Failed to load expert",
           description: error.message || "Please try again later.",
           variant: "destructive",
         });
@@ -100,15 +108,11 @@ const CounselorDetail = () => {
       }
     };
 
-    fetchCounselor();
+    fetchExpert();
   }, [id, navigate]);
 
   const handleBookAppointment = () => {
-    toast({
-      title: "Booking Feature",
-      description: "Booking system coming soon!",
-      duration: 3000,
-    });
+    navigate(`/booking/${expert.id}`);
   };
 
   if (loading) {
@@ -132,15 +136,15 @@ const CounselorDetail = () => {
     );
   }
 
-  if (!counselor) {
+  if (!expert) {
     return (
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-6 py-12 text-center">
           <h1 className="text-2xl font-bold text-foreground mb-4">
-            Counselor Not Found
+            Expert Not Found
           </h1>
-          <Button onClick={() => navigate("/counselors")}>
-            Back to Counselors
+          <Button onClick={() => navigate("/experts")}>
+            Back to Experts
           </Button>
         </div>
         <Footer />
@@ -157,11 +161,11 @@ const CounselorDetail = () => {
           {/* Back Button */}
           <Button
             variant="ghost"
-            onClick={() => navigate("/counselors")}
+            onClick={() => navigate("/experts")}
             className="mb-6"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Counselors
+            Back to Experts
           </Button>
 
           {/* Top Section */}
@@ -175,21 +179,21 @@ const CounselorDetail = () => {
                 className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm"
               >
                 <img
-                  src={counselor.image}
-                  alt={counselor.name}
+                  src={expert.image}
+                  alt={expert.name}
                   className="w-full h-80 object-cover"
                 />
                 
                 <div className="p-6 space-y-4">
                   {/* Badges */}
                   <div className="flex flex-wrap gap-2">
-                    {counselor.verified && (
+                    {expert.verified && (
                       <span className="px-3 py-1 bg-primary/15 text-primary text-sm rounded-full flex items-center gap-1">
                         <Award className="w-3 h-3" />
                         Verified
                       </span>
                     )}
-                    {counselor.acceptsNewPatients && (
+                    {expert.acceptsNewPatients && (
                       <span className="px-3 py-1 bg-accent/15 text-accent-foreground text-sm rounded-full flex items-center gap-1">
                         <CheckCircle className="w-3 h-3" />
                         Available
@@ -198,14 +202,14 @@ const CounselorDetail = () => {
                   </div>
 
                   {/* Rating */}
-                  {counselor.rating > 0 && (
+                  {expert.rating > 0 && (
                     <div className="flex items-center gap-2">
                       <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                       <span className="font-semibold text-foreground">
-                        {counselor.rating.toFixed(1)}
+                        {expert.rating.toFixed(1)}
                       </span>
                       <span className="text-sm text-muted-foreground">
-                        ({counselor.reviews} reviews)
+                        ({expert.reviews} reviews)
                       </span>
                     </div>
                   )}
@@ -213,19 +217,19 @@ const CounselorDetail = () => {
                   {/* Experience */}
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Award className="w-4 h-4 text-primary" />
-                    <span>{counselor.experience} years experience</span>
+                    <span>{expert.experience} years experience</span>
                   </div>
 
                   {/* Languages */}
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Users className="w-4 h-4 text-secondary" />
-                    <span>{counselor.languages.join(", ")}</span>
+                    <span>{expert.languages.join(", ")}</span>
                   </div>
 
                   {/* Session Types */}
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Video className="w-4 h-4 text-accent" />
-                    <span className="capitalize">{counselor.sessionTypes.join(", ")}</span>
+                    <span className="capitalize">{expert.sessionTypes.join(", ")}</span>
                   </div>
                 </div>
               </motion.div>
@@ -251,13 +255,18 @@ const CounselorDetail = () => {
                 transition={{ delay: 0.1 }}
               >
                 <h1 className="text-3xl font-bold text-foreground mb-2">
-                  {counselor.name}
+                  {expert.name}
                 </h1>
+                {expert.headline && (
+                  <p className="text-md text-muted-foreground mb-2">
+                    {expert.headline}
+                  </p>
+                )}
                 <p className="text-lg text-primary font-medium mb-4">
-                  {counselor.specialization}
+                  {expert.specialization}
                 </p>
                 <p className="text-2xl font-bold text-primary mb-4">
-                  ${counselor.rate} <span className="text-sm text-muted-foreground font-normal">/session</span>
+                  ${expert.rate} <span className="text-sm text-muted-foreground font-normal">/session</span>
                 </p>
               </motion.div>
 
@@ -315,7 +324,7 @@ const CounselorDetail = () => {
                       About Me
                     </h3>
                     <p className="text-muted-foreground leading-relaxed">
-                      {counselor.bio || "No bio available."}
+                      {expert.bio || "No bio available."}
                     </p>
                     
                     <div className="grid md:grid-cols-2 gap-4 pt-4">
@@ -327,17 +336,17 @@ const CounselorDetail = () => {
                       <InfoCard
                         icon={<Clock className="w-5 h-5 text-secondary" />}
                         label="Session Duration"
-                        value={`${counselor.session_duration_mins || 50} minutes`}
+                        value={`${expert.session_duration_mins || 50} minutes`}
                       />
                       <InfoCard
                         icon={<Video className="w-5 h-5 text-accent" />}
                         label="Session Format"
-                        value={counselor.sessionTypes[0]?.toUpperCase() || "VIDEO"}
+                        value={expert.sessionTypes[0]?.toUpperCase() || "VIDEO"}
                       />
                       <InfoCard
                         icon={<MapPin className="w-5 h-5 text-primary" />}
                         label="Location"
-                        value={`${counselor.city || "Online"}, ${counselor.country || "India"}`}
+                        value={`${expert.city || "Online"}, ${expert.country || "India"}`}
                       />
                     </div>
                   </div>
@@ -348,9 +357,9 @@ const CounselorDetail = () => {
                     <h3 className="text-xl font-semibold text-foreground">
                       Areas of Expertise
                     </h3>
-                    {counselor.expertise && counselor.expertise.length > 0 ? (
+                    {expert.expertise && expert.expertise.length > 0 ? (
                       <div className="grid md:grid-cols-2 gap-3">
-                        {counselor.expertise.map((exp, index) => (
+                        {expert.expertise.map((exp, index) => (
                           <div
                             key={index}
                             className="flex items-start gap-3 p-3 bg-card border border-border rounded-lg"
@@ -372,9 +381,9 @@ const CounselorDetail = () => {
                       <h3 className="text-xl font-semibold text-foreground mb-3">
                         Education
                       </h3>
-                      {counselor.education && counselor.education.length > 0 ? (
+                      {expert.education && expert.education.length > 0 ? (
                         <div className="space-y-2">
-                          {counselor.education.map((edu, index) => (
+                          {expert.education.map((edu, index) => (
                             <div
                               key={index}
                               className="flex items-start gap-3 p-3 bg-card border border-border rounded-lg"
@@ -393,9 +402,9 @@ const CounselorDetail = () => {
                       <h3 className="text-xl font-semibold text-foreground mb-3">
                         Certifications
                       </h3>
-                      {counselor.certifications && counselor.certifications.length > 0 ? (
+                      {expert.certifications && expert.certifications.length > 0 ? (
                         <div className="space-y-2">
-                          {counselor.certifications.map((cert, index) => (
+                          {expert.certifications.map((cert, index) => (
                             <div
                               key={index}
                               className="flex items-start gap-3 p-3 bg-card border border-border rounded-lg"
@@ -434,4 +443,4 @@ const InfoCard = ({ icon, label, value }) => (
   </div>
 );
 
-export default CounselorDetail;
+export default ExpertDetail;

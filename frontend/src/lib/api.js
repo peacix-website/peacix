@@ -1,92 +1,258 @@
-// API base URL
-const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_URL || 'http://localhost:5000/api';
+import { supabase } from "@/lib/supabase";
 
-// Generic API function to handle requests
-const apiRequest = async (endpoint, options = {}) => {
-  const url = `${API_BASE_URL}${endpoint}`;
-  
-  const config = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    ...options,
-  };
+// Retry configuration
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
 
+/**
+ * Execute a function with retry logic
+ * @param {Function} fn - Async function to execute
+ * @param {number} retries - Number of retries left
+ * @returns {Promise<any>}
+ */
+export const withRetry = async (fn, retries = MAX_RETRIES) => {
   try {
-    const response = await fetch(url, config);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || `HTTP error! status: ${response.status}`);
-    }
-
-    return data;
+    return await fn();
   } catch (error) {
-    console.error(`API request failed: ${endpoint}`, error);
+    if (retries > 0 && error.message.includes('network')) {
+      console.warn(`Request failed, retrying... (${MAX_RETRIES - retries + 1}/${MAX_RETRIES})`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+      return withRetry(fn, retries - 1);
+    }
     throw error;
   }
 };
 
-// Counselor API functions
-export const counselorApi = {
-  // Get all counselors with optional filters
-  getAllCounselors: (params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
-    const endpoint = queryString ? `/counselors?${queryString}` : '/counselors';
-    return apiRequest(endpoint);
-  },
+/**
+ * Experts API Service
+ */
+export const expertsApi = {
+  /**
+   * Fetch all experts with optional filters
+   * @param {Object} filters - Filter criteria
+   * @returns {Promise<Array>}
+   */
+  async getExperts(filters = {}) {
+    return withRetry(async () => {
+      let query = supabase
+        .from("clinicians")
+        .select(`
+          *,
+          profiles!inner (
+            id,
+            full_name,
+            avatar_url,
+            gender,
+            bio
+          )
+        `)
+        .order("avg_rating", { ascending: false });
 
-  // Get counselor by ID
-  getCounselorById: (id) => {
-    return apiRequest(`/counselors/${id}`);
-  },
+      // Apply filters
+      if (filters.specialization) {
+        query = query.ilike("specialization", `%${filters.specialization}%`);
+      }
 
-  // Get counselor availability
-  getCounselorAvailability: (id) => {
-    return apiRequest(`/counselors/${id}/availability`);
-  },
+      if (filters.clinicianType) {
+        query = query.eq("clinician_type", filters.clinicianType);
+      }
 
-  // Get all service types
-  getServiceTypes: () => {
-    return apiRequest('/counselors/service-types');
-  },
+      if (filters.minExperience) {
+        query = query.gte("years_of_experience", parseInt(filters.minExperience));
+      }
 
-  // Get all specialties
-  getSpecialties: () => {
-    return apiRequest('/counselors/specialties');
-  },
-};
+      if (filters.acceptsNewPatients) {
+        query = query.eq("accepts_new_patients", true);
+      }
 
-// Booking API functions
-export const bookingApi = {
-  // Create a new booking
-  createBooking: (bookingData) => {
-    return apiRequest('/bookings', {
-      method: 'POST',
-      body: JSON.stringify(bookingData),
+      if (filters.sessionType) {
+        query = query.contains("session_types", [filters.sessionType]);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      // Transform data
+      return data.map(expert => ({
+        ...expert,
+        name: expert.profiles?.full_name || "Unknown",
+        image: expert.profiles?.avatar_url || "/default-avatar.png",
+        bio: expert.profiles?.bio || expert.bio,
+        rate: expert.session_rate_cents ? (expert.session_rate_cents / 100).toFixed(2) : "0"
+      }));
     });
   },
 
-  // Get all bookings (admin only)
-  getAllBookings: () => {
-    return apiRequest('/bookings');
+  /**
+   * Get expert by ID
+   * @param {string} id - Expert UUID
+   * @returns {Promise<Object>}
+   */
+  async getExpertById(id) {
+    return withRetry(async () => {
+      const { data, error } = await supabase
+        .from("clinicians")
+        .select(`
+          *,
+          profiles!inner (
+            id,
+            full_name,
+            avatar_url,
+            gender,
+            bio,
+            phone
+          )
+        `)
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+
+      return {
+        ...data,
+        name: data.profiles?.full_name || "Unknown",
+        image: data.profiles?.avatar_url || "/default-avatar.png",
+        rate: data.session_rate_cents ? (data.session_rate_cents / 100).toFixed(2) : "0"
+      };
+    });
   },
 
-  // Get booking by ID (admin only)
-  getBookingById: (id) => {
-    return apiRequest(`/bookings/${id}`);
-  },
+  /**
+   * Get unique specializations
+   * @returns {Promise<Array>}
+   */
+  async getSpecializations() {
+    return withRetry(async () => {
+      const { data, error } = await supabase
+        .from("clinicians")
+        .select("specialization")
+        .not("specialization", "is", null);
 
-  // Get counselor bookings (admin only)
-  getCounselorBookings: (counselorId) => {
-    return apiRequest(`/bookings/counselor/${counselorId}`);
-  },
+      if (error) throw error;
+
+      const uniqueSpecs = [...new Set(data.map(c => c.specialization))].filter(Boolean);
+      return uniqueSpecs.sort();
+    });
+  }
 };
 
-// Health check
-export const healthApi = {
-  checkHealth: () => {
-    return apiRequest('/health');
+/**
+ * Bookings API Service
+ */
+export const bookingsApi = {
+  /**
+   * Create a new booking
+   * @param {Object} bookingData - Booking information
+   * @returns {Promise<Object>}
+   */
+  async createBooking(bookingData) {
+    return withRetry(async () => {
+      const { data, error } = await supabase
+        .from("bookings")
+        .insert([bookingData])
+        .select("id")
+        .single();
+
+      if (error) throw error;
+      return data;
+    });
   },
+
+  /**
+   * Get user's bookings
+   * @param {string} userId - User UUID
+   * @returns {Promise<Array>}
+   */
+  async getUserBookings(userId) {
+    return withRetry(async () => {
+      const { data, error } = await supabase
+        .from("bookings")
+        .select(`
+          *,
+          clinicians (
+            profiles (full_name, avatar_url)
+          )
+        `)
+        .eq("patient_id", userId)
+        .order("scheduled_at", { ascending: true });
+
+      if (error) throw error;
+      return data;
+    });
+  }
+};
+
+/**
+ * Mood API Service
+ */
+export const moodApi = {
+  /**
+   * Create mood entry
+   * @param {Object} moodData - Mood information
+   * @returns {Promise<Object>}
+   */
+  async createMoodEntry(moodData) {
+    return withRetry(async () => {
+      const { data, error } = await supabase
+        .from("mood_entries")
+        .insert([moodData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    });
+  },
+
+  /**
+   * Get user's mood history
+   * @param {string} userId - User UUID
+   * @returns {Promise<Array>}
+   */
+  async getMoodHistory(userId) {
+    return withRetry(async () => {
+      const { data, error } = await supabase
+        .from("mood_entries")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(30);
+
+      if (error) throw error;
+      return data;
+    });
+  }
+};
+
+/**
+ * Generic API utilities
+ */
+export const apiUtils = {
+  /**
+   * Check if user is authenticated
+   * @returns {Promise<Object|null>}
+   */
+  async getCurrentUser() {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
+  },
+
+  /**
+   * Get user profile
+   * @param {string} userId - User UUID
+   * @returns {Promise<Object>}
+   */
+  async getUserProfile(userId) {
+    return withRetry(async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    });
+  }
 };

@@ -17,7 +17,7 @@ const CounselorCard = ({
 
   const handleViewProfile = () => {
     const counselorId = _id || id;
-    navigate(`/counselor/${counselorId}`);
+    navigate(`/expert/${counselorId}`);
   };
 
   return (
