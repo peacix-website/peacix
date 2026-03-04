@@ -1,11 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 const ResourcesPage = () => {
-
   const blogs = [
     {
       title: "Understanding Anxiety",
@@ -54,8 +52,6 @@ const ResourcesPage = () => {
   return (
     <div className="min-h-screen bg-background">
 
-      
-
       <main className="max-w-7xl mx-auto px-6 py-20 space-y-20">
 
         {/* HERO */}
@@ -70,14 +66,13 @@ const ResourcesPage = () => {
 
         {/* BLOG PREVIEW */}
         <section>
-
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-2xl font-semibold text-foreground">
               Blog
             </h2>
 
             <Link
-              to="/blog"
+              to="blog"
               className="flex items-center text-primary font-medium"
             >
               View all <ArrowRight className="ml-2 w-4 h-4" />
@@ -85,7 +80,6 @@ const ResourcesPage = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-
             {blogs.map((blog, index) => (
               <div
                 key={index}
@@ -100,21 +94,18 @@ const ResourcesPage = () => {
                 </p>
               </div>
             ))}
-
           </div>
-
         </section>
 
         {/* GUIDES PREVIEW */}
         <section>
-
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-2xl font-semibold text-foreground">
               Guides
             </h2>
 
             <Link
-              to="/guides"
+              to="guides"
               className="flex items-center text-primary font-medium"
             >
               View all <ArrowRight className="ml-2 w-4 h-4" />
@@ -122,7 +113,6 @@ const ResourcesPage = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-
             {guides.map((guide, index) => (
               <div
                 key={index}
@@ -137,21 +127,18 @@ const ResourcesPage = () => {
                 </p>
               </div>
             ))}
-
           </div>
-
         </section>
 
         {/* FAQ PREVIEW */}
         <section>
-
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-2xl font-semibold text-foreground">
               FAQs
             </h2>
 
             <Link
-              to="/faqs"
+              to="faqs"
               className="flex items-center text-primary font-medium"
             >
               View all <ArrowRight className="ml-2 w-4 h-4" />
@@ -159,7 +146,6 @@ const ResourcesPage = () => {
           </div>
 
           <div className="space-y-4">
-
             {faqs.map((faq, index) => (
               <div
                 key={index}
@@ -174,9 +160,7 @@ const ResourcesPage = () => {
                 </p>
               </div>
             ))}
-
           </div>
-
         </section>
 
       </main>
