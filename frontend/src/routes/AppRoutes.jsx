@@ -21,6 +21,8 @@ import ExpertsPage from "@/pages/ExpertsPage";
 import ExpertDetail from "@/pages/ExpertDetail";
 import ClinicsPage from "@/pages/ClinicsPage";
 import BookingPage from "@/pages/BookingPage";
+import JournalPage from "@/pages/JournalPage";
+import MeditationPage from "@/pages/MeditationPage";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 function AppRoutes({ session }) {
@@ -105,6 +107,24 @@ function AppRoutes({ session }) {
         element={
           <ProtectedRoute allowedRoles={['patient']}>
             <Chat />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/journal"
+        element={
+          <ProtectedRoute allowedRoles={['patient']}>
+            <JournalPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/meditation"
+        element={
+          <ProtectedRoute allowedRoles={['patient']}>
+            <MeditationPage />
           </ProtectedRoute>
         }
       />

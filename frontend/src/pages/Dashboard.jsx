@@ -18,6 +18,7 @@ const Dashboard = () => {
   const [greetingName, setGreetingName] = useState("");
   const [showAssessmentPrompt, setShowAssessmentPrompt] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -27,6 +28,9 @@ const Dashboard = () => {
         } = await supabase.auth.getUser();
 
         if (!user) return;
+
+        // Store user ID for later use
+        setUserId(user.id);
 
         // ✅ Step 1: Get profile data
         const { data: profile, error: profileError } = await supabase
@@ -230,8 +234,16 @@ const Dashboard = () => {
               title="Chat with AI"
               onClick={() => navigate("/chat")}
             />
-            <QuickCard icon={<BookOpen size={24} />} title="Journal" />
-            <QuickCard icon={<Brain size={24} />} title="Meditate" />
+            <QuickCard 
+              icon={<BookOpen size={24} />} 
+              title="Journal" 
+              onClick={() => navigate("/journal")}
+            />
+            <QuickCard 
+              icon={<Brain size={24} />} 
+              title="Meditate" 
+              onClick={() => navigate("/meditation")}
+            />
             <QuickCard 
               icon={<Calendar size={24} />} 
               title="Book session" 
