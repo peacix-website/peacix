@@ -48,3 +48,23 @@ export const getExpertById = async (id) => {
 
   return data;
 };
+
+export const getFeaturedExperts = async (limit = 3) => {
+  const { data, error } = await supabase
+    .from("clinicians")
+    .select(`
+      *,
+      profile:profiles!clinicians_profile_id_fkey (
+        id,
+        full_name,
+        avatar_url,
+        bio
+      )
+    `)
+    .order("avg_rating", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+
+  return data;
+};

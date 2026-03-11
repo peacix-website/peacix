@@ -3,8 +3,8 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import CounselorCard from "@/components/CounselorCard";
 import { toast } from "@/components/ui/use-toast";
-import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { getFeaturedExperts } from "@/lib/expertsApi";
 
 const CounselorsSection = () => {
   const [counselors, setCounselors] = useState([]);
@@ -13,24 +13,37 @@ const CounselorsSection = () => {
 
   useEffect(() => {
     const fetchCounselors = async () => {
-      const { data, error } = await supabase
-        .from("clinician_directory")
-        .select("*")
-        .order("avg_rating", { ascending: false })
-        .limit(6);
+      try {
+        const data = await getFeaturedExperts(3);
 
-      if (error) {
+        const transformed = data.map((c) => ({
+          id: c.id,
+          full_name: c.profile?.full_name || "Expert",
+          avatar_url:
+            c.profile?.avatar_url ||
+            `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
+              c.profile?.full_name || "Expert"
+            )}`,
+          headline: c.headline || c.bio || "Licensed Mental Health Professional",
+          avg_rating: c.avg_rating || 0,
+          total_reviews: c.total_reviews || 0,
+          session_rate_cents: c.session_rate_cents || 0,
+          currency: c.currency || "USD",
+          specializations: c.specialization || c.clinician_type,
+        }));
+
+        setCounselors(transformed);
+      } catch (error) {
         console.error("Error fetching counselors:", error);
+
         toast({
           title: "Error",
           description: "Failed to load counselors.",
           variant: "destructive",
         });
-      } else {
-        setCounselors(data);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     fetchCounselors();
@@ -46,12 +59,10 @@ const CounselorsSection = () => {
         id="counselors"
         className="py-20 bg-gradient-to-br from-background to-[hsl(var(--secondary)/0.08)]"
       >
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-semibold text-foreground">
-              Loading our licensed experts...
-            </h2>
-          </div>
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <h2 className="text-3xl md:text-4xl font-semibold text-foreground">
+            Loading our licensed experts...
+          </h2>
         </div>
       </section>
     );
@@ -68,7 +79,6 @@ const CounselorsSection = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
@@ -87,36 +97,26 @@ const CounselorsSection = () => {
           </p>
         </motion.div>
 
-        {/* Grid */}
+        {/* Counselors Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-14">
-          {counselors.slice(0, 3).map((counselor, index) => (
+
+          {counselors.map((counselor, index) => (
             <motion.div
               key={counselor.id}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
             >
-              <CounselorCard
-                id={counselor.id}
-                full_name={counselor.full_name}
-                avatar_url={counselor.avatar_url}
-                headline={counselor.headline}
-                avg_rating={counselor.avg_rating}
-                total_reviews={counselor.total_reviews}
-                session_rate_cents={counselor.session_rate_cents}
-                currency={counselor.currency}
-                specializations={counselor.specializations}
-              />
+              <CounselorCard {...counselor} />
             </motion.div>
           ))}
+
         </div>
 
         {/* CTA */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
           transition={{ duration: 0.6 }}
           className="text-center"
         >
@@ -124,6 +124,7 @@ const CounselorsSection = () => {
             Find Your Expert
           </Button>
         </motion.div>
+
       </div>
     </section>
   );
